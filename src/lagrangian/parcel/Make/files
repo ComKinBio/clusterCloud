@@ -1,0 +1,39 @@
+PARCELS=parcels
+BASEPARCELS=$(PARCELS)/baseClasses
+DERIVEDPARCELS=$(PARCELS)/derived
+
+CLOUDS=clouds
+BASECLOUDS=$(CLOUDS)/baseClasses
+DERIVEDCLOUDS=$(CLOUDS)/derived
+
+# cloud names
+$(CLOUDS)/Templates/ReactingClusterCloud/ReactingClusterCloudName.C
+
+# clouds
+$(DERIVEDCLOUDS)/reactingClusterCloud/reactingClusterCloud.C
+
+# parcel names
+$(PARCELS)/Templates/ReactingClusterParcel/ReactingClusterParcelName.C
+
+# sub-models
+$(DERIVEDPARCELS)/reactingClusterParcel/makeReactingClusterParcelSubmodels.C
+
+#$(DERIVEDPARCELS)/momentumParcel/makeMomentumParcelSubmodels.C
+#$(DERIVEDPARCELS)/collidingParcel/makeCollidingParcelSubmodels.C
+#$(DERIVEDPARCELS)/mppicParcel/makeMppicParcelSubmodels.C
+#$(DERIVEDPARCELS)/thermoParcel/makeThermoParcelSubmodels.C
+#$(DERIVEDPARCELS)/reactingParcel/makeReactingParcelSubmodels.C
+#$(DERIVEDPARCELS)/reactingMultiphaseParcel/makeReactingMultiphaseParcelSubmodels.C
+#$(DERIVEDPARCELS)/sprayParcel/makeSprayParcelSubmodels.C
+
+# bolt-on models
+
+CLUSTERINJECTION=submodels/ClusterMultiphase/InjectionModel
+$(CLUSTERINJECTION)/ClusterLookupTableInjection/clusterParcelInjectionData.C
+$(CLUSTERINJECTION)/ClusterLookupTableInjection/clusterParcelInjectionDataIO.C
+$(CLUSTERINJECTION)/ClusterLookupTableInjection/clusterParcelInjectionDataIOList.C
+
+# fvModels
+fvModels/clusterClouds.C
+
+LIB = $(FOAM_USER_LIBBIN)/liblagrangianClusterParcel

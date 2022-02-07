@@ -1,0 +1,249 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      coalCloudProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+type        reactingClusterCloud;
+
+solution
+{
+    transient       false;
+    coupled         true;
+    calcFrequency   30; // carrier steps per cloud step - only for steady operation
+                        // not for the custom steady solvers
+    maxTrackTime    15; //maximum particle track time - is it the same as max number steps in Fluent
+    
+    cellValueSourceCorrection off;
+    maxCo           0.3;
+
+    sourceTerms
+    {
+        resetOnStartup no; //load source terms at startup
+        schemes
+        {
+            rho             semiImplicit 1;
+            U               semiImplicit 1;
+            Yi              semiImplicit 1;
+            h               semiImplicit 1;
+            radiation       semiImplicit 1;
+        }
+    }
+
+    interpolationSchemes
+    {
+        rho             cell;
+        U               cellPointWallModified;
+        thermo:mu       cell;
+        thermo:rho      cell;
+        T               cell;
+        Cp              cell;
+        kappa           cell;
+        p               cell;
+        G               cell;
+        epsilon         cell;  
+        k               cell;
+        mu              cell;
+        Deff.O2         cell;
+   }
+
+    integrationSchemes
+    {
+        U               Euler;
+        T               analytical;
+    }
+}
+
+constantProperties
+{
+    rho0            510;  //density kg/m3
+    T0              1000; //initial particle temperature 
+    Cp0             1680; //J/kg/K
+    epsilon0        0.9;  //particle emissivity
+    f0              0;    //particle scattering factor
+
+    TDevol          400; //devolatilisation temperature
+    LDevol          0;    //latent heat of devolatilisation
+    hRetentionCoeff 0.3; //fraction of enthalpy retained by parcel due to surface reaction
+
+    constantVolume  true; 
+    alphaMax 0.6;
+    
+    //for the reactingCluster parcel
+    diffCoeff0      6e-04;
+    constantCp      true;
+}
+
+subModels
+{
+    particleForces
+    {
+        sphereDrag; 
+        gravity;
+    }
+
+    injectionModels
+    {
+        model1
+        {
+            type            patchInjection;
+            massFlowRate    table ((0 0) (1000 0) (1100 0.0015));
+            //massFlowRate    0.0015; // kg/s
+            parcelBasisType mass;
+            parcelsPerSecond 5000;
+            flowRateProfile constant 1;
+            patchName       inlet;
+            duration        1;   //set to 1 for steady state
+            SOI             100; //only read if transient
+            U0              (0 0 -10); //should be same as gas velocity at inlet
+            sizeDistribution
+            {
+                type        fixedValue;
+                fixedValueDistribution
+                {
+                    value               3.5e-4;
+                }
+            }
+        }
+    }
+
+    dispersionModel stochasticDispersionRAS; 
+
+    patchInteractionModel localInteraction;
+
+    localInteractionCoeffs
+    {
+        patches
+        (
+            walls
+            {
+                type escape;
+            }
+            top
+            {
+                type rebound;
+                e    1;
+                mu   0;
+            }
+            inlet
+            {
+                type rebound;
+                e    1;
+                mu   0;
+            }
+            bottom
+            {
+                type escape;
+            }
+        );
+    }
+    
+
+
+    heatTransferModel RanzMarshall; 
+
+    compositionModel singleMixtureFraction; 
+
+    phaseChangeModel none; 
+
+    devolatilisationModel constantRateDevolatilisation;
+
+    stochasticCollisionModel none;
+
+    surfaceReactionModel none;
+    surfaceFilmModel     none;
+    clusterOxidationModel    clusterKineticDiffusionLimitedOxidationRate;
+    clusterGasificationModel none;
+
+    radiation       on;
+
+    RanzMarshallCoeffs
+    {
+        BirdCorrection  false;
+    }
+
+    singleMixtureFractionCoeffs
+    {
+        phases
+        (
+            gas
+            {
+                volatiles       1;
+            }
+            liquid
+            {
+            }
+            solid
+            {
+                ash             0.2016;
+                C               0.7984; 
+            }
+        );
+        YGasTot0        0.4998;
+        YLiquidTot0     0;
+        YSolidTot0      0.5002; 
+    }
+
+    liquidEvaporationCoeffs
+    {
+        enthalpyTransfer latentHeat;
+
+        activeLiquids
+        (
+            H2O
+        );
+    }
+
+    constantRateDevolatilisationCoeffs
+    {
+        volatileData
+        (
+            (volatiles            50) //CkHlOmNnSo
+        );
+        residualCoeff   0.001;
+    }
+
+    clusterKineticDiffusionLimitedOxidationRateCoeffs
+    {
+        Sb              1;       //stoichiometric coefficient
+        C1              5.0E-12; //s/K^-3/4
+        A               0.002;   //Arrhenius parameter
+        Ea              7.9E+07; //J/kmol
+        eta             1;
+        Hf              0;       //J/kg
+        cluster         true;
+    }
+
+}
+
+cloudFunctions
+{
+    patchPostProcessing1
+    {
+        type            patchPostProcessing;
+        maxStoredParcels 100;
+        patches         ( bottom );
+    }
+    particleTracks1
+    {
+        type            particleTracks;
+        trackInterval   1;
+        maxSamples      100000;
+        resetOnWrite    yes;
+        cloud           reactingClusterCloud;
+    }
+}
+
+
+
+// ************************************************************************* //

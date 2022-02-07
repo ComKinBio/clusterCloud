@@ -1,0 +1,6 @@
+reaction
+{
+    type     irreversibleInfinite;
+    reaction "volatiles + 1.258O2 = 1.034CO2 + 1.341H2O + 0.0034SO2 + 0.0137N2";
+}
+

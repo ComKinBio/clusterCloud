@@ -1,0 +1,87 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  4.0                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      diffusionProperties.liquid;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+type HayashiHishida;
+writeFields     true;
+
+LenardJonesCoeffs
+{
+    H2
+    {
+        geometry            1;
+        wellDepth           5.24646541131e-22;
+        collDiamameter      2.92e-10;
+        dipoleMoment        0.0;
+        polarizipility      7.9e-31;
+        rotRelaxation       280.0;
+    }
+    O2
+    {
+        geometry            1;
+        wellDepth           1.48281680309e-21;
+        collDiamameter      3.46e-10;
+        dipoleMoment        0.0;
+        polarizipility      1.6e-30;
+        rotRelaxation       3.8;
+    }
+    H2O
+    {
+        geometry            2;
+        wellDepth           7.90283368798e-21;
+        collDiamameter      2.6e-10;
+        dipoleMoment        6.13757935165e-30;
+        polarizipility      0.0;
+        rotRelaxation       4.0;
+    }
+    CO2
+    {
+        geometry            1;
+        wellDepth           3.36878305358e-21;
+        collDiamameter      3.76e-10;
+        dipoleMoment        0.0;
+        polarizipility      2.65e-30;
+        rotRelaxation       2.1;
+    }
+    N2
+    {
+        geometry            1;
+        wellDepth           1.34654676728e-21;
+        collDiamameter      3.62e-10;
+        dipoleMoment        0.0;
+        polarizipility      1.76e-30;
+        rotRelaxation       4.0;
+    }
+    volatiles // Test
+    {
+        geometry            2;
+        wellDepth           6.01962873508e-21;
+        collDiamameter      3.97e-10;
+        dipoleMoment        0.0;
+        polarizipility      0.0;
+        rotRelaxation       2.0;
+    }
+    SO2 // Test
+    {
+        geometry            2;
+        wellDepth           6.01962873508e-21;
+        collDiamameter      3.6e-10; //in m 
+        dipoleMoment        0.0;
+        polarizipility      0.0;
+        rotRelaxation       2.0;
+    }
+
+}

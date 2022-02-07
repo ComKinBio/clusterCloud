@@ -1,0 +1,166 @@
+species
+(
+    N2
+    O2
+    SO2
+    H2O
+    volatiles
+    CO2
+);
+
+
+CO2
+{
+    specie
+    {
+        molWeight       44.01;
+    }
+    thermodynamics
+    {
+        CpCoeffs<8> (535.446 1.27867 -0.000546776 -2.38224e-7 1.89204e-10 0 0 0);
+        Hf  -8941149.74; //J/kg 
+        Sf  4856.17;
+    }
+    transport
+    {
+        mu                1.72e-5;
+        Pr                0.85;
+        As              1.67212e-06;
+        Ts              170.6;
+    }
+    equationOfState
+    { 
+        pRef 1.0135e5;
+    }
+}
+
+
+H2O
+{
+    specie
+    {
+        molWeight       18.0153;
+    }
+    thermodynamics
+    {
+        CpCoeffs<8> (1937.8 -1.18077 0.00364357 -2.86327e-6 7.59578e-10 0 0 0 );
+        Hf -13421924.7; //J/kg 
+        Sf 10474.23;
+    }
+    transport
+    {
+        mu                1.72e-5;
+        Pr                0.85;
+        As              1.67212e-06;
+        Ts              170.6;
+    }
+    equationOfState
+    { 
+        pRef 1.0135e5;
+    }
+}
+
+O2
+{
+    specie
+    {
+        molWeight       31.9988;
+    }
+    thermodynamics
+    {
+        CpCoeffs<8> (876.317 0.122828 0.000558304 -1.20247e-6 1.14741e-9 -5.12377e-13 8.56597e-17 0);
+        Hf 0;
+        Sf 6407.33;
+    }
+    transport
+    {
+        mu                1.72e-5;
+        Pr                0.85;
+        As              1.67212e-06;
+        Ts              170.6;
+    }
+    equationOfState
+    { 
+        pRef 1.0135e5;
+    }
+}
+
+N2
+{
+    specie
+    {
+        molWeight       28.0134;
+    }
+    thermodynamics
+    {
+        //CpCoeffs<8> (979.043 0.4179639 -0.001176279 1.674394e-6 -7.256297e-10 0 0 0); //for 300-1000K
+        CpCoeffs<8> (868.6229 0.4416295 -0.000168723 2.996787e-8 -2.004386e-12 0 0 0);
+        Hf 0;
+        Sf 6835.83;
+    }
+    transport
+    {
+        mu                1.72e-5;
+        Pr                0.85;
+        As              1.67212e-06;
+        Ts              170.6;
+    }
+    equationOfState
+    { 
+        pRef 1.0135e5;
+    }
+}
+
+volatiles 
+{
+    specie
+    {
+        molWeight       30;
+    }
+    thermodynamics
+    {
+        CpCoeffs<8> ( 2005 -0.681428 0.00708589 -4.71368e-6 8.51317e-10 0 0 0);
+        Hf -7526666.67;
+        Sf  0;
+   }
+    transport
+    {
+        mu                1.72e-5;
+        Pr                0.85;
+        As              1.67212e-06;
+        Ts              170.6;
+    }
+    equationOfState
+    { 
+        pRef 1.0135e5;
+    }
+}
+
+SO2
+{
+    specie
+    {
+        molWeight       64.0628;
+    }
+    thermodynamics
+    {
+        CpCoeffs<8> (681.9509 0.2567839 -0.0001064779 2.045896e-8 -1.454169e-12 0 0 0); 
+        Hf -4634514.88;
+        Sf 3872.73;
+    }
+    transport
+    {
+        mu                1.72e-5;
+        Pr                0.85;
+        As              1.67212e-06;
+        Ts              170.6;
+    }
+    equationOfState
+    { 
+        pRef 1.0135e5;
+    }
+
+}
+
+
+// ************************************************************************* //

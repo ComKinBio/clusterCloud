@@ -1,0 +1,16 @@
+edmCombustionModel/edmCombustionModel.C
+edmCombustionModel/edmCombustionModelNew.C
+
+laminar/laminar.C
+
+noCombustion/noCombustion.C
+
+singleStepCombustion/singleStepCombustion.C
+
+eddyDissipationDiffusionModel/eddyDissipationDiffusionModel.C
+
+eddyDissipationModel/eddyDissipationModel.C
+
+fvModels/edmCombustion/edmCombustion.C
+
+LIB = $(FOAM_USER_LIBBIN)/libedmCombustionModels

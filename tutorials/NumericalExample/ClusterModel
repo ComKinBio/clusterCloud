@@ -1,0 +1,10 @@
+#$ -S /bin/bash
+. /opt/openfoam9/etc/bashrc
+#$ -cwd -V -j y -m e
+#$ -pe mpi 4
+
+decomposePar
+mpirun reactingFoam -parallel
+
+reconstructPar -latestTime 
+foamToVTK -latestTime
