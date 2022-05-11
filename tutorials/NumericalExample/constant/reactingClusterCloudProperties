@@ -40,6 +40,15 @@ solution
         }
     }
 
+    sourceDistribution false;
+
+    diffusion
+    {
+        useImplicitLaplacian true;
+        diffusionBandWidth  21e-4;
+    }
+
+
     interpolationSchemes
     {
         rho             cell;
