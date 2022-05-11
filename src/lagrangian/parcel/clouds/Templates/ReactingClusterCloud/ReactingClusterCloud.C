@@ -60,6 +60,25 @@ void Foam::ReactingClusterCloud<CloudType>::setModels()
             *this
         ).ptr()
     );
+    if (sourceDistribution_)
+    {
+        rDeltaTi_.reset
+        (
+            new volScalarField
+            (
+                IOobject
+                (
+                    "rDeltaTi",
+                    this->mesh().time().timeName(),
+                    this->mesh(),
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                this->mesh(),
+                dimensionedScalar(dimless/dimTime, 0.0)
+            )
+        );
+    }
 }
 
 
@@ -78,6 +97,298 @@ void Foam::ReactingClusterCloud<CloudType>::cloudReset
     dMassDevolatilisation_ = c.dMassDevolatilisation_;
     dMassOxidation_ = c.dMassOxidation_;
     dMassGasification_ = c.dMassGasification_;
+}
+
+template<class CloudType>
+template<class TrackCloudType>
+void Foam::ReactingClusterCloud<CloudType>::evolveCloud
+(
+    TrackCloudType& cloud,
+    typename parcelType::trackingData& td
+)
+{
+    if (this->solution_.coupled())
+    {
+        cloud.resetSourceTerms();
+    }
+
+    if (this->solution_.transient())
+    {
+        label preInjectionSize = this->size();
+
+        this->surfaceFilm().inject(cloud);
+
+        // Update the cellOccupancy if the size of the cloud has changed
+        // during the injection.
+        if (preInjectionSize != this->size())
+        {
+            this->updateCellOccupancy();
+            preInjectionSize = this->size();
+        }
+
+        // Assume that motion will update the cellOccupancy as necessary
+        // before it is required.
+        cloud.motion(cloud, td);
+
+        this->injectors_.inject(cloud, td);
+
+        this->stochasticCollision().update(td, this->solution_.trackTime());
+
+    }
+    else
+    {
+//        this->surfaceFilm().injectSteadyState(cloud);
+
+        this->injectors_.injectSteadyState
+        (
+            cloud,
+            td,
+            this->solution_.trackTime()
+        );
+
+        CloudType::move(cloud, td, this->solution_.trackTime());
+    }
+    if(sourceDistribution_)
+    {
+        this->hsTransRef() = diffusion(this->hsTrans(), "heat");
+        this->hsCoeffRef() = diffusion(this->hsCoeff(), "heat");
+
+        if (this->radiation_)
+        {
+            this->radAreaP() = diffusion(this->radAreaP(),"radia");
+            this->radT4() = diffusion(this->radT4(),"radia");
+            this->radAreaPT4() = diffusion(this->radAreaPT4(),"radia");
+        }
+
+        this->UTransRef() = diffusion(this->UTrans(),"momentum");
+        this->UCoeffRef() = diffusion(this->UCoeff(),"momentum");
+        
+        if (this->compositionModel_.valid())
+        {
+            label idGas = this->composition().idGas();
+            label idLiquid = this->composition().idLiquid();
+
+            forAll(this->composition().Y0(idGas), i)
+            {
+                label gid = this->composition().localToCarrierId(0, i);
+                this->rhoTrans(gid) = diffusion(this->rhoTrans(gid), "species");
+            }
+            forAll(this->composition().Y0(idLiquid), i)
+            {
+                label gid = this->composition().localToCarrierId(1, i);
+                this->rhoTrans(gid) = diffusion(this->rhoTrans(gid), "species");
+            }
+        }
+    }
+}
+
+
+template<class CloudType>
+void Foam::ReactingClusterCloud<CloudType>::diffusion
+(
+    volScalarField& s,
+    word type
+)
+{    
+    volScalarField diffWorkField
+    (
+        IOobject
+        (
+            "Smooth",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar(s.dimensions(), scalar(0.0)),
+        zeroGradientFvPatchScalarField::typeName
+        
+    );
+    
+    scalarField& diffWorkFieldInterFeildRef = diffWorkField.ref();
+    
+    scalarField& sInterFeildRef = s.ref();
+
+    diffWorkFieldInterFeildRef = sInterFeildRef;
+
+    scalarField& trDeltaTi = rDeltaTi_->field();
+    trDeltaTi = 1.0/diffusionDeltaT(type);
+    
+    if(implicitFvm_)
+    {
+        Foam::solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT_, diffWorkField));
+    }
+    else
+    {
+        Foam::solve(fvm::ddt(diffWorkField) - fvc::laplacian(DT_, diffWorkField));
+    }
+
+    sInterFeildRef = diffWorkField;
+    
+    return;
+}
+        
+
+template<class CloudType>
+Foam::tmp<Foam::volScalarField::Internal> Foam::ReactingClusterCloud<CloudType>::diffusion
+(
+    const volScalarField::Internal& s,
+    word type
+)
+{        
+    tmp<volScalarField::Internal> tS
+    (
+        volScalarField::Internal::New
+        (
+            "tS",
+            this->mesh(),
+            dimensionedScalar(s.dimensions(), 0)
+        )
+    );
+
+    scalarField& S = tS.ref();
+    
+    S = s;
+    
+    volScalarField diffWorkField
+    (
+        IOobject
+        (
+            "Smooth",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh(),
+        dimensionedScalar(s.dimensions(), scalar(0.0)),
+        zeroGradientFvPatchScalarField::typeName
+    );
+    
+    diffWorkField.ref() = s;
+    diffWorkField.primitiveFieldRef() = s;
+
+    scalarField& diffWorkFieldInterFeildRef = diffWorkField.ref();
+
+    diffWorkFieldInterFeildRef = S;
+
+    scalarField& trDeltaTi = rDeltaTi_->field();
+    trDeltaTi = 1.0/diffusionDeltaT(type);
+
+    if(implicitFvm_)
+    {
+        Foam::solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT_, diffWorkField));
+    }
+    else
+    {
+        Foam::solve(fvm::ddt(diffWorkField) - fvc::laplacian(DT_, diffWorkField));
+    }
+
+    S = diffWorkField.internalField();
+
+    return tS;
+}
+
+template<class CloudType>
+Foam::tmp<Foam::volVectorField::Internal> Foam::ReactingClusterCloud<CloudType>::diffusion
+(
+    const volVectorField::Internal& s,
+    word type
+)
+{        
+    tmp<volVectorField::Internal> tS
+    (
+        volVectorField::Internal::New
+        (
+            "tS",
+            this->mesh(),
+            dimensionedVector(s.dimensions(), vector::zero)
+        )
+    );
+
+    vectorField& S = tS.ref();
+    
+    S = s;
+    
+    volVectorField diffWorkField
+    (
+        IOobject
+        (
+            "Smooth",
+            this->mesh().time().timeName(),
+            this->mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        this->mesh(),
+        dimensionedVector(s.dimensions(),vector::zero),
+        zeroGradientFvPatchVectorField::typeName
+    );
+
+    
+    vectorField& diffWorkFieldInterFeildRef = diffWorkField.ref();
+    
+    diffWorkFieldInterFeildRef = S;
+
+    scalarField& trDeltaTi = rDeltaTi_->field();
+    trDeltaTi = 1.0/diffusionDeltaT(type);
+    
+    if(implicitFvm_)
+    {
+        Foam::solve(fvm::ddt(diffWorkField) - fvm::laplacian(DT_, diffWorkField));
+    }
+    else
+    {
+        Foam::solve(fvm::ddt(diffWorkField) - fvc::laplacian(DT_, diffWorkField));
+    }
+
+    S = diffWorkField.internalField();
+    
+    return tS;
+}
+
+template<class CloudType>
+template<class TrackCloudType>
+void Foam::ReactingClusterCloud<CloudType>::solve
+(
+    TrackCloudType& cloud,
+    typename parcelType::trackingData& td
+)
+{
+    if (this->solution_.steadyState())
+    {
+        cloud.storeState();
+
+        cloud.preEvolve();
+
+        evolveCloud(cloud, td);
+
+        if (this->solution_.coupled())
+        {
+            cloud.relaxSources(cloud.cloudCopy());
+        }
+    }
+    else
+    {
+        cloud.preEvolve();
+
+        evolveCloud(cloud, td);
+
+        if (this->solution_.coupled())
+        {
+            cloud.scaleSources();
+        }
+    }
+
+    cloud.info();
+
+    cloud.postEvolve();
+
+    if (this->solution_.steadyState())
+    {
+        cloud.restoreState();
+    }
 }
 
 
@@ -162,6 +473,24 @@ Foam::ReactingClusterCloud<CloudType>::ReactingClusterCloud
          dimensionedScalar("zero", dimLength, 0.0)
     ),
     constProps_(this->particleProperties()),
+    sourceDistribution_(this->solution().dict().template lookupOrDefault<bool>("sourceDistribution", false)),
+    implicitFvm_(this->solution().dict().subDict("diffusion").template lookupOrDefault<bool>("useImplicitLaplacian", false)),
+    diffusionBandWidth_(this->solution().dict().subDict("diffusion").template lookupOrDefault<scalar>("diffusionBandWidth", 0.024)),
+    diffusionBandWidthForMassCoupling_(this->solution().dict().subDict("diffusion").template lookupOrDefault<scalar>("diffusionBandWidthMass", diffusionBandWidth_)),
+    diffusionBandWidthForMomentumCoupling_(this->solution().dict().subDict("diffusion").template lookupOrDefault<scalar>("diffusionBandWidth", diffusionBandWidth_)),
+    diffusionBandWidthForHeatCoupling_(this->solution().dict().subDict("diffusion").template lookupOrDefault<scalar>("diffusionBandWidthMomentum", diffusionBandWidth_)),
+    diffusionBandWidthForRadiaCoupling_(this->solution().dict().subDict("diffusion").template lookupOrDefault<scalar>("diffusionBandWidthRadia", diffusionBandWidth_)),
+    diffusionBandWidthForSpecieCoupling_(this->solution().dict().subDict("diffusion").template lookupOrDefault<scalar>("diffusionBandWidthSpecie", diffusionBandWidth_)),
+    smoothDirection_
+    (
+        this->solution().dict().subDict("diffusion").template lookupOrDefault
+        (
+            "smoothDirection",
+            tensor(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0)
+        )
+    ),
+    DT_("DT", dimensionSet(0, 2, -1, 0, 0), smoothDirection_),
+    rDeltaTi_(nullptr),
     devolatilisationModel_(nullptr),
     clusterOxidationModel_(nullptr),
     clusterGasificationModel_(nullptr),
@@ -201,6 +530,17 @@ Foam::ReactingClusterCloud<CloudType>::ReactingClusterCloud
     dAvg_(c.dAvg_),
     dAvgPrev_(c.dAvgPrev_),
     constProps_(c.constProps_),
+    sourceDistribution_(c.sourceDistribution_),
+    implicitFvm_(c.implicitFvm_),
+    diffusionBandWidth_(c.diffusionBandWidth_),
+    diffusionBandWidthForMassCoupling_(c.diffusionBandWidthForMassCoupling_),
+    diffusionBandWidthForMomentumCoupling_(c.diffusionBandWidthForMomentumCoupling_),
+    diffusionBandWidthForHeatCoupling_(c.diffusionBandWidthForHeatCoupling_),
+    diffusionBandWidthForRadiaCoupling_(c.diffusionBandWidthForRadiaCoupling_),
+    diffusionBandWidthForSpecieCoupling_(c.diffusionBandWidthForSpecieCoupling_),
+    smoothDirection_(c.smoothDirection_),
+    DT_(c.DT_),
+    rDeltaTi_(nullptr),
     devolatilisationModel_(c.devolatilisationModel_->clone()),
     clusterOxidationModel_(c.clusterOxidationModel_->clone()),
     clusterGasificationModel_(c.clusterGasificationModel_->clone()),
@@ -209,7 +549,28 @@ Foam::ReactingClusterCloud<CloudType>::ReactingClusterCloud
     dMassGasification_(c.dMassGasification_),
     epsilon_(c.epsilon_),
     k_(c.k_)
-{}
+{
+    if (c.sourceDistribution_)
+    {
+        rDeltaTi_.reset
+        (
+            new volScalarField
+            (
+                IOobject
+                (
+                    "rDeltaTi",
+                    this->mesh().time().timeName(),
+                    this->mesh(),
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                this->mesh(),
+                dimensionedScalar(dimless/dimTime, 0.0)
+            )
+        );
+    }
+}
+
 
 
 template<class CloudType>
@@ -228,6 +589,17 @@ Foam::ReactingClusterCloud<CloudType>::ReactingClusterCloud
     dAvg_(c.dAvg_),
     dAvgPrev_(c.dAvgPrev_),
     constProps_(c.constProps_),
+    sourceDistribution_(c.sourceDistribution_),
+    implicitFvm_(c.implicitFvm_),
+    diffusionBandWidth_(c.diffusionBandWidth_),
+    diffusionBandWidthForMassCoupling_(c.diffusionBandWidthForMassCoupling_),
+    diffusionBandWidthForMomentumCoupling_(c.diffusionBandWidthForMomentumCoupling_),
+    diffusionBandWidthForHeatCoupling_(c.diffusionBandWidthForHeatCoupling_),
+    diffusionBandWidthForRadiaCoupling_(c.diffusionBandWidthForRadiaCoupling_),
+    diffusionBandWidthForSpecieCoupling_(c.diffusionBandWidthForSpecieCoupling_),
+    smoothDirection_(c.smoothDirection_),
+    DT_(c.DT_),
+    rDeltaTi_(nullptr),
     devolatilisationModel_(nullptr),
     clusterOxidationModel_(nullptr),
     clusterGasificationModel_(nullptr),
@@ -236,7 +608,27 @@ Foam::ReactingClusterCloud<CloudType>::ReactingClusterCloud
     dMassGasification_(0.0),
     epsilon_(c.epsilon_),
     k_(c.k_)
-{}
+{
+    if (c.sourceDistribution_)
+    {
+        rDeltaTi_.reset
+        (
+            new volScalarField
+            (
+                IOobject
+                (
+                    "rDeltaTi",
+                    this->mesh().time().timeName(),
+                    this->mesh(),
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                this->mesh(),
+                dimensionedScalar(dimless/dimTime, 0.0)
+            )
+        );
+    }
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -330,6 +722,11 @@ template<class CloudType>
 void Foam::ReactingClusterCloud<CloudType>::resetSourceTerms()
 {
     CloudType::resetSourceTerms();
+
+        if (sourceDistribution_)
+    {
+        rDeltaTi_->field() = 0.0;
+    }
 }
 
 

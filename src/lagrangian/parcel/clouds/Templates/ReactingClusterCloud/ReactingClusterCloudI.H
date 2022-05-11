@@ -159,6 +159,48 @@ inline const Foam::volScalarField& Foam::ReactingClusterCloud<CloudType>::k() co
     return k_;
 }
 
+template<class CloudType>
+Foam::scalar Foam::ReactingClusterCloud<CloudType>::diffusionDeltaT(word type)
+{
+    if (type == "phase")
+    {
+        scalar diffusionTime(pow(diffusionBandWidth_, 2)/4);
+        return diffusionTime;
+    }
+    else if (type == "mass")
+    {
+        scalar diffusionTime(pow(diffusionBandWidthForMassCoupling_, 2)/4); 
+        return diffusionTime;
+    }
+    else if (type == "momentum")
+    {
+        scalar diffusionTime(pow(diffusionBandWidthForMassCoupling_, 2)/4); 
+        return diffusionTime;
+    }
+    else if (type == "heat")
+    {
+        scalar diffusionTime(pow(diffusionBandWidthForHeatCoupling_, 2)/4); 
+        return diffusionTime;
+    }
+    else if (type == "radia")
+    {
+        scalar diffusionTime(pow(diffusionBandWidthForRadiaCoupling_, 2)/4); 
+        return diffusionTime;
+    }
+    else if (type == "species")
+    {
+        scalar diffusionTime(pow(diffusionBandWidthForSpecieCoupling_, 2)/4); 
+        return diffusionTime;
+    }
+    else
+    {
+        FatalErrorInFunction
+            << "source type is not defined" << type
+            << abort(FatalError);
+    }
+    
+    return scalar(0.0);
+}
 
 
 // ************************************************************************* //

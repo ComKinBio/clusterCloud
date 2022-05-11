@@ -1,0 +1,5 @@
+# ddt schemes
+./independentEulerDdt/independentEulerDdt.C
+./independentEulerDdt/independentEulerDdtSchemes.C
+
+LIB = $(FOAM_USER_LIBBIN)/libadditionalSchemes

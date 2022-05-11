@@ -72,7 +72,12 @@ Foam::fv::clusterClouds::clusterClouds
     (
         mesh.lookupObject<volScalarField>
         (
-            carrierThermo_.phasePropertyName("thermo:rho")
+            carrierThermo_.phasePropertyName
+            (
+                word(dict.lookupOrDefault<word>("carrier",word::null))
+             == word::null ?
+                word("rho") : word("thermo:rho")
+            )
         ),
         mesh.lookupObject<volVectorField>
         (
@@ -89,10 +94,20 @@ Foam::fv::clusterClouds::clusterClouds
 
 Foam::wordList Foam::fv::clusterClouds::addSupFields() const
 {
+    word rhoName;
+    if (this->mesh().foundObject<volScalarField>("rho"))
+    {
+        rhoName = "rho";
+    }
+    else
+    {
+        rhoName = "thermo:rho";
+    }
+
     wordList fieldNames
     (
         {
-            carrierThermo_.phasePropertyName("thermo:rho"),
+            carrierThermo_.phasePropertyName(rhoName),
             carrierThermo_.phasePropertyName("U"),
             carrierThermo_.he().name()
         }
@@ -142,7 +157,11 @@ void Foam::fv::clusterClouds::addSup
         Info<< type() << ": applying source to " << eqn.psi().name() << endl;
     }
 
-    if (fieldName == carrierThermo_.phasePropertyName("rho"))
+    if
+    (
+        fieldName == carrierThermo_.phasePropertyName("thermo:rho")
+     || fieldName == carrierThermo_.phasePropertyName("rho")
+    )
     {
         eqn += clusterClouds_.Srho(eqn.psi());
     }
@@ -167,7 +186,11 @@ void Foam::fv::clusterClouds::addSup
         Info<< type() << ": applying source to " << eqn.psi().name() << endl;
     }
 
-    if (fieldName == carrierThermo_.phasePropertyName("thermo:rho"))
+    if
+    (
+        fieldName == carrierThermo_.phasePropertyName("thermo:rho")
+     || fieldName == carrierThermo_.phasePropertyName("rho")
+    )
     {
         eqn += clusterClouds_.Srho(eqn.psi());
     }
@@ -198,9 +221,84 @@ void Foam::fv::clusterClouds::addSup
     }
 }
 
+void Foam::fv::clusterClouds::addSup
+(
+    const volScalarField& alpha,
+    const volScalarField& rho,
+    fvMatrix<scalar>& eqn,
+    const word& fieldName
+) const
+{
+    if (debug)
+    {
+        Info<< type() << ": applying source to " << eqn.psi().name() << endl;
+    }
+
+    if
+    (
+        fieldName == carrierThermo_.phasePropertyName("thermo:rho")
+     || fieldName == carrierThermo_.phasePropertyName("rho")
+    )
+    {
+        eqn += clusterClouds_.Srho(eqn.psi());
+    }
+    else if (fieldName == carrierThermo_.he().name())
+    {
+        eqn += clusterClouds_.Sh(eqn.psi());
+    }
+    else if
+    (
+        isA<basicSpecieMixture>(carrierThermo_)
+    && refCast<const basicSpecieMixture>(carrierThermo_).contains
+        (
+            eqn.psi().member()
+        )
+    )
+    {
+        volScalarField tY(eqn.psi());
+        tY.rename(tY.member());
+        eqn += clusterClouds_.SYi
+        (
+            refCast<const basicSpecieMixture>(carrierThermo_).index(tY),
+            eqn.psi()
+        );
+    }
+    else
+    {
+        FatalErrorInFunction
+            << "Support for field " << fieldName << " is not implemented"
+            << exit(FatalError);
+    }
+}
+
 
 void Foam::fv::clusterClouds::addSup
 (
+    const volScalarField& rho,
+    fvMatrix<vector>& eqn,
+    const word& fieldName
+) const
+{
+    if (debug)
+    {
+        Info<< type() << ": applying source to " << eqn.psi().name() << endl;
+    }
+
+    if (fieldName == carrierThermo_.phasePropertyName("U"))
+    {
+        eqn += clusterClouds_.SU(eqn.psi());
+    }
+    else
+    {
+        FatalErrorInFunction
+            << "Support for field " << fieldName << " is not implemented"
+            << exit(FatalError);
+    }
+}
+
+void Foam::fv::clusterClouds::addSup
+(
+    const volScalarField& alpha,
     const volScalarField& rho,
     fvMatrix<vector>& eqn,
     const word& fieldName

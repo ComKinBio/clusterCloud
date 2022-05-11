@@ -138,9 +138,25 @@ public:
                 const word& fieldName
             ) const;
 
+            virtual void addSup
+            (
+                const volScalarField& alpha,
+                const volScalarField& rho,
+                fvMatrix<scalar>& eqn,
+                const word& fieldName
+            ) const;
+
             //- Add source to momentum equation
             virtual void addSup
             (
+                const volScalarField& rho,
+                fvMatrix<vector>& eqn,
+                const word& fieldName
+            ) const;
+            
+            virtual void addSup
+            (
+                const volScalarField& alpha,
                 const volScalarField& rho,
                 fvMatrix<vector>& eqn,
                 const word& fieldName

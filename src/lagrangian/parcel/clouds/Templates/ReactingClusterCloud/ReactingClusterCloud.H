@@ -30,6 +30,51 @@ Description
 
     - Adds to reacting multiphase cloud
       - turbulent clustering effect
+       @article{Kruger2017,
+       author = {Kr{\"{u}}ger, Jonas and Haugen, Nils Erland L. and L{\o}v{\aa}s, Terese},
+       doi = {10.1016/j.combustflame.2017.07.008},
+       issn = {15562921},
+       journal = {Combustion and Flame},
+       pages = {160--172},
+       title = {{Correlation effects between turbulence and the conversion rate of pulverized char particles}},
+       volume = {185},
+       year = {2017}
+       }
+
+       @article{Haugen2018,
+       author = {Haugen, Nils Erland L. and Kr{\"{u}}ger, Jonas and Mitra, Dhrubaditya and L{\o}v{\aa}s, Terese},
+       doi = {10.1017/jfm.2017.820},
+       issn = {14697645},
+       journal = {Journal of Fluid Mechanics},
+       pages = {932--951},
+       title = {{The effect of turbulence on mass transfer rates of small inertial particles with surface reactions}},
+       volume = {836},
+       year = {2018}
+       }
+
+
+    - Additionally it adds the possibility for source term diffusion 
+      defined in the cloud dictionary:
+
+        sourceDistribution true;
+
+        diffusion
+        {
+            //for the implicit solution 
+            // ddt(Smooth) independentEuler;
+            // needs to be specified in the fvSchemes 
+            useImplicitLaplacian true;//false;
+            
+            //proposed to be taken as 6dp
+            diffusionBandWidth  0.018;
+    
+            //Default to the above, if not given
+            diffusionBandWidthRadia  0.018; 
+            diffusionBandWidthHeat   0.018;
+            diffusionBandWidthMass   0.018;
+            diffusionBandWidthMomentum  0.018;
+        }
+        
 
 SourceFiles
     ReactingClusterCloudI.H
@@ -47,6 +92,7 @@ SourceFiles
 #include "fluidThermo.H"
 #include "Cloud.H"
 
+#include "fvCFD.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -126,6 +172,36 @@ protected:
         //- Parcel constant properties
         typename parcelType::constantProperties constProps_;
 
+        //- flag to indicate if source terms should be distributed / diffused
+        const bool sourceDistribution_;
+
+        //- flag to switch between explicit and implicit diffusion term
+        const bool implicitFvm_;
+
+        //- Phase diffusion band width
+        const scalar diffusionBandWidth_;
+        
+        //- Mass diffusion band width
+        const scalar diffusionBandWidthForMassCoupling_;
+        
+        //- Momentum diffusion band width
+        const scalar diffusionBandWidthForMomentumCoupling_;
+        
+        //- Heat diffusion band width
+        const scalar diffusionBandWidthForHeatCoupling_;
+        
+        //- Radiation diffusion band width
+        const scalar diffusionBandWidthForRadiaCoupling_;
+
+        //- Species diffusion band width
+        const scalar diffusionBandWidthForSpecieCoupling_;
+                        
+        //- Diffusion tensor direction
+        tensor smoothDirection_;
+        
+        //- Diffusion tensor
+        dimensionedTensor DT_;
+        autoPtr<volScalarField> rDeltaTi_;
 
         // References to the cloud sub-models
 
@@ -178,6 +254,32 @@ protected:
             //- Set cloud sub-models
             void setModels();
 
+        // Cloud evolution functions
+
+            //- Solve the cloud - calls all evolution functions
+            template<class TrackCloudType>
+            void solve
+            (
+                TrackCloudType& cloud,
+                typename parcelType::trackingData& td
+            );
+
+            //- Evolve the cloud
+            template<class TrackCloudType>
+            void evolveCloud
+            (
+                TrackCloudType& cloud,
+                typename parcelType::trackingData& td
+            );
+
+            //- Return the diffused field obtained from the given volScalarField s
+            void diffusion(volScalarField& s, word type);
+        
+            //- Return the diffused field obtained from the given volScalarField s
+            tmp<volScalarField::Internal> diffusion(const volScalarField::Internal& s, word type);
+
+            //- Return the diffused field obtained from the given volVectorField s
+            tmp<volVectorField::Internal> diffusion(const volVectorField::Internal& s, word type);
 
         // Cloud evolution functions
 
@@ -368,6 +470,11 @@ public:
 
         //- Return the turbulence kinetic energy
         inline const volScalarField& k() const;
+        
+        //- Get end time and dt according to source type
+        //- the input shoule be "phase" "mass" "momentum" "heat" "radia" "species"
+        
+        scalar diffusionDeltaT(word type);
 
 
     // Member Operators
