@@ -1,0 +1,30 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # run from this directory
+
+# Source tutorial run functions
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+# Set application name
+application=$(getApplication)
+
+#create or get mesh
+if [ -f ../mesh/log.snappyHexMesh ]
+then
+    echo "mesh already created - copy mesh"
+    cp -r ../mesh/3/polyMesh constant/
+else
+    echo "no mesh available"
+    cd ../mesh/
+    ./Allrun
+    cd - 
+    cp -r ../mesh/3/polyMesh constant/
+fi
+
+cp -r 0.org 0
+
+echo "Running mapFields from $1 to $2"
+mapFields ./ -case ../onlyFlow -sourceTime latestTime > ./log.mapFields -consistent 2>&1
+
+runApplication decomposePar
+runParallel    $application
+runApplication reconstructPar

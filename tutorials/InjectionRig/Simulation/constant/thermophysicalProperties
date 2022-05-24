@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType
+{
+    type            heRhoThermo;
+    mixture         multiComponentMixture; 
+    transport       sutherland;
+    thermo          janaf;
+    energy          sensibleEnthalpy;
+    equationOfState perfectGas;
+    specie          specie;
+}
+
+#include "thermo.mod"
+
+
+defaultSpecie N2;
+
+liquids
+{
+    H2O;
+}
+
+solids
+{
+    C
+    { 
+        //if constantVolume = false, species rho irrelevant
+        Cp    1500;      //irrelevant if constantCp = true
+        kappa 0.2599999; 
+        emissivity 0.9;
+    }
+    ash
+    {
+        Cp    1500;      //irrelevant if constantCp = true
+        emissivity 0.9;
+        kappa 0.2599999; 
+    }
+}
+
+
+// ************************************************************************* //

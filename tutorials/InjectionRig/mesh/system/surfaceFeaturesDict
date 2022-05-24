@@ -1,0 +1,99 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      surfaceFeaturesDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+surface1
+{
+    surfaces
+    (
+        "in_coolinggas.stl"
+        "outlet.stl"
+        "w_lance_3.stl"
+        "w_raceway.stl"
+        "in_blast.stl"
+        "in_pci.stl"
+        "w_lance_2.stl"
+        "w_lance.stl"
+    );
+
+    trimFeatures
+    {
+        // Remove features with fewer than the specified number of edges
+        minElem         2;
+
+        // Remove features shorter than the specified cumulative length
+        minLen          0.01;
+    }
+
+    // Identify a feature when angle between faces < includedAngle
+    includedAngle   155;
+
+    // Do not mark region edges
+    geometricTestOnly       yes;
+
+    // Write options
+    writeObj                yes;
+    verboseObj              no;
+
+    // Write surface proximity and curvature fields to vtk format
+    // for postprocessing
+    writeVTK                yes;
+}
+
+
+surface2
+{
+    surfaces
+    (
+        "w_tuyere.stl"
+    );
+
+
+    trimFeatures
+    {
+        // Remove features with fewer than the specified number of edges
+        minElem         0;
+
+        // Remove features shorter than the specified cumulative length
+        minLen          0.0;
+    }
+
+    // Identify a feature when angle between faces < includedAngle
+    includedAngle   180;
+
+    subsetFeatures
+    {
+        // Select feature edges using a box
+        // (minPt)(maxPt)
+        // Keep edges inside the box:
+        insideBox           (1 1 -0.05)(1 1 0.05);
+
+        // Keep nonManifold edges (edges with >2 connected faces where
+        // the faces form more than two different normal planes)
+        nonManifoldEdges    yes;
+
+        // Keep open edges (edges with 1 connected face)
+        openEdges           yes;
+    }
+
+    // Write features to obj format for postprocessing
+    writeObj                yes;
+    verboseObj              no;
+
+    // Write surface proximity and curvature fields to vtk format
+    // for postprocessing
+    writeVTK                no;
+}
+
+// ************************************************************************* //

@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7  
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    "w_.*"
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);        
+    }
+    outlet
+    {
+        type            zeroGradient;
+    }
+    in_coolinggas
+    {
+        type            flowRateInletVelocity;
+        massFlowRate    table
+                        (
+                        (0 0)
+                        (1000 0.001079)
+                        );
+        rho             thermo:rho;
+        rhoInlet        1.205; //density at 298 K
+
+    }
+    in_blast
+    {
+        type            flowRateInletVelocity;
+        massFlowRate    table
+                        (
+                        (0 0)
+                        (1000 0.1004167)
+                        );
+        rho             thermo:rho;
+        rhoInlet        0.2361;
+
+    }
+    in_pci
+    {
+        type            flowRateInletVelocity;
+        massFlowRate    table
+                        (
+                        (0 0) 
+                        (1000 0.0006943)
+                        );
+        rho             thermo:rho;
+        rhoInlet        1.165; //N2 density at 298 K
+    }
+    sampleRegion
+    {
+        type zeroGradient;
+    }
+
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,120 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "(rho|G)"
+    {
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-05;
+        relTol          0.1;
+    }
+
+   "(rho|G)Final"
+    {
+        $rho;
+        tolerance       1e-05;
+        relTol          0;
+    }
+
+    p
+    {
+        solver          GAMG;
+        tolerance       1e-06;
+        relTol          0.01;
+        smoother        GaussSeidel;
+    }
+
+    pFinal
+    {
+        $p;
+        tolerance       1e-06;
+        relTol          0;
+    }
+
+    "(U|h|R|k|epsilon)"
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-05;
+        relTol          0.1;
+    }
+
+    "(U|h|R|k|epsilon)Final"
+    {
+        $U;
+        tolerance       1e-05;
+        relTol          0;
+    }
+
+    "(Yi|CO2|O2|N2|CH4|H2|H2O|CO)"
+    {
+        $h;
+    }
+
+    "(Yi|CO2|O2|N2|CH4|H2|H2O|CO)Final"
+    {
+        $Yi;
+        tolerance       1e-06;
+        relTol          0;
+    }
+    "Ii.*"
+    {
+        solver              GAMG;
+        tolerance           1e-4;
+        relTol              0;
+        smoother            symGaussSeidel;
+        maxIter             5;
+        nPostSweeps         1;
+    }
+
+}
+
+PIMPLE
+{
+    transonic       no;
+    nCorrectors     3;
+    nNonOrthogonalCorrectors 0;
+    momentumPredictor yes;
+    residualControl
+    {
+        p               1e-4;
+        U               1e-5;
+        "(k|epsilon)"   1e-5;
+    }
+}
+
+
+relaxationFactors
+{
+    fields
+    {
+    }
+    equations
+    {
+        p                  0.3;
+        U                  0.3;  
+        h                  0.3;  
+        k                  0.7;  
+        "(epsilon|omega)"  0.7;  
+        default            0.7;
+    }
+
+}
+
+
+// ************************************************************************* //

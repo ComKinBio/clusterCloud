@@ -1,0 +1,73 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField   uniform 1000;
+
+boundaryField
+{
+    w_lance_3
+    {
+        type            zeroGradient;
+    }
+    w_raceway
+    {
+        type            fixedValue;
+        value           uniform 1800;
+    }
+    w_lance_2
+    {
+        type            zeroGradient;
+    }
+    w_lance
+    {
+        type            zeroGradient;
+    }
+    w_tuyere
+    {
+        type            fixedValue;
+        value           uniform 1800;
+    }
+    outlet
+    {
+        type            zeroGradient;
+    }
+    in_coolinggas
+    {
+        type            fixedValue;
+        value           uniform 298;
+    }
+    in_blast
+    {
+        type            fixedValue;
+        value           uniform 1473;
+    }
+    in_pci
+    {
+        type            fixedValue;
+        value           uniform 298;
+    }
+    sampleRegion
+    {
+        type zeroGradient;
+    }
+
+}
+
+
+// ************************************************************************* //

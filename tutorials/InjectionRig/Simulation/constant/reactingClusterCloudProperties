@@ -1,0 +1,287 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7  
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      reactingClusterCloudProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+type        reactingClusterCloud;
+
+solution
+{
+    active          yes;
+    transient       false;
+    calcFrequency   30; 
+    maxTrackTime    0.05; 
+    maxCo           0.1;
+    
+    coupled         true;
+    cellValueSourceCorrection false;
+
+    sourceTerms
+    {
+        resetOnStartup  no; 
+        schemes
+        {
+            rho             semiImplicit 0.7;
+            U               semiImplicit 0.7;
+            Yi              semiImplicit 0.7;
+            h               semiImplicit 0.7;
+            radiation       semiImplicit 0.7;
+        }
+    }
+
+    sourceDistribution off;
+    diffusion
+    {
+    }
+
+    interpolationSchemes
+    {
+        rho             cell;
+        U               cellPointWallModified;
+        thermo:mu       cell;
+        thermo:rho      cell;
+        T               cell;
+        Cp              cell;
+        kappa           cell;
+        p               cell;
+        G               cell;
+        epsilon         cell;
+        k               cell;
+        mu              cell;
+    }
+
+    integrationSchemes
+    {
+        U               Euler;
+        T               analytical;
+    }
+}
+
+
+constantProperties
+{
+    rho0            1300;
+    T0              300;
+    Cp0             1500; 
+    epsilon0        0.9;
+    f0              0.5;
+
+    //for the reactingCluster parcel
+    diffCoeff0      -1.02761721e-05;
+    diffCoeff1       5.59583094e-08;
+    diffCoeff2       7.42629068e-11;
+    constantCp       true;
+
+    TDevol          400;
+    LDevol          -10362994;
+
+    hRetentionCoeff 0.3;
+    
+    constantVolume  false;
+}
+
+
+subModels
+{
+
+    particleForces
+    {
+        sphereDrag 
+        {
+        }; 
+        gravity;
+    }
+
+    injectionModels
+    {
+        model1
+        {
+            type            patchInjection; 
+            massFlowRate    0.00877777778; //31.6kg/h
+            parcelBasisType mass;
+            patchName       in_pci;
+            parcelsPerSecond 10000;
+            duration        1; // NOTE: set to 1 for steady state
+            U0              (0 -2.088 19.865);
+            flowRateProfile constant 1; 
+            sizeDistribution
+            {
+                type        RosinRammler;
+                RosinRammlerDistribution
+                {
+                    minValue      2e-6;
+                    maxValue    100e-6;
+                    d            30e-6;
+                    n             0.97;
+                }
+            }
+        }
+    }
+
+    dispersionModel stochasticDispersionRAS;
+
+    patchInteractionModel localInteraction; 
+
+    heatTransferModel RanzMarshall; 
+
+    compositionModel singleMixtureFraction;
+
+    phaseChangeModel liquidEvaporation; 
+
+    devolatilisationModel competingTwoStepKineticRateDevolatilisation;
+
+    stochasticCollisionModel none;
+
+    surfaceFilmModel none;
+
+    clusterOxidationModel    gibbClusterKineticDiffusionLimitedOxidationRate;
+    clusterGasificationModel clusterKineticDiffusionLimitedGasification;
+
+    radiation       on;
+
+    localInteractionCoeffs
+    {
+        patches
+        (
+            "w.*"
+            {
+                type rebound;
+                e    0.9;
+                mu   0.1;
+            }
+            outlet
+            {
+                type escape; 
+            }
+            "in_.*"
+            {
+                type rebound;
+                e    1;
+                mu   0;
+            }
+        );
+    }
+
+    competingTwoStepKineticRateDevolatilisationCoeffs
+    {
+        residualCoeff 1e-6;
+        volatileData
+        (
+            // (name A1 E1 alpha1 A2 E2 alpha2)
+            (vol 3.7e5 1.4965e8 0.136 1.46e13 2.5099e8 0.148)
+            // alpha1 corresponds to the volatile mass fraction on DAF
+            // alpha2 = 1.25 * alpha1^2 + 0.92 * alpha1 
+        );
+    }
+
+    gibbClusterKineticDiffusionLimitedOxidationRateCoeffs
+    {
+        C1              5.0E-12; //Diffusional constant
+        A               0.052;   //Arrhenius parameter
+        beta            0;       //Temperature exponent
+        Ea              6.1e7;   //J/kmol
+        eta             0.6;     //efficiency factor
+        etaKin          1;       //kinetic efficiency factor
+        Hf              0;       //J/kg
+        cluster         true;     //switch on/off turbulent clustering model
+        //parameters for CO/CO2 rtio
+        As              2500;    // -
+        Ts              6240;    // K
+    }
+
+    clusterKineticDiffusionLimitedGasificationCoeffs
+    {
+        CO2
+        {
+            C1           5e-12; 
+            eta            0.7; 
+            etaKin           1;
+            A            20230; 
+            E          3.304e8; 
+            cluster      true;
+            active       true;
+        }
+        H2O
+        {
+            C1          5e-12; 
+            eta           0.6; 
+            etaKin          1;
+            A           606.9; 
+            E         2.697e8; 
+            cluster     true;
+            active      true;
+        }
+        H2
+        {
+            C1              0; 
+            eta             1; 
+            etaKin          1;
+            A               0; 
+            E         3.304e8; 
+            cluster     false;
+            active      false; //switch on/off gasification reaction
+        }
+    }
+
+
+    RanzMarshallCoeffs
+    {
+        BirdCorrection  off;
+    }
+
+    singleMixtureFractionCoeffs
+    {
+        phases
+        (
+            gas
+            {
+                vol 1;
+            }
+            liquid
+            {
+                H2O 1;
+            }
+            solid
+            {
+                C   0.9077;
+                ash 0.0923;
+            }
+        );
+        YGasTot0        0.124;
+        YLiquidTot0     0.009;
+        YSolidTot0      0.867;
+    }
+
+    liquidEvaporationCoeffs
+    {
+        enthalpyTransfer enthalpyDifference;
+        activeLiquids   ( H2O );
+    }
+}
+
+
+cloudFunctions
+{
+    particleTracks1
+    {
+        type            particleTracks;
+        trackInterval   1;
+        maxSamples      1000000;
+        resetOnWrite    yes;
+    }
+}
+
+
+// ************************************************************************* //

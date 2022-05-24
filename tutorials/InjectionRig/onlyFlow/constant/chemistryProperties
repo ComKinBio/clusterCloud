@@ -1,0 +1,78 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9  
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      chemistryProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+chemistryType
+{
+    solver            ode;
+    method            TDAC;
+}
+
+odeCoeffs
+{
+    solver          seulex;
+    absTol          1e-8;
+    relTol          1e-1;
+}
+
+chemistry       on;
+
+writeFields     true;
+
+reduction
+{
+    active          off; 
+    log             on;
+    tolerance       1e-4;
+    method          none;
+    initialSet
+    {
+        H2O;
+    }
+    automaticSIS    off;
+    fuelSpecies
+    {
+        CH4;
+        H2;
+        CO;
+    }
+}
+
+tabulation
+{
+    active          off;
+    log             on;
+    printProportion off;
+    printNumRetrieve off;
+    tolerance       1e-3;
+    method          ISAT;
+    maxNLeafs       5000;
+
+    scaleFactor
+    {
+        otherSpecies    1;
+        Temperature     5000;
+        Pressure        1e+5;
+        deltaT          1;
+    }
+}
+
+
+initialChemicalTimeStep 1e-07;  
+
+#include "WD_multi.OF"
+
+// ************************************************************************* //

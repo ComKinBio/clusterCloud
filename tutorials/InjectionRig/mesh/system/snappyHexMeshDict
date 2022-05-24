@@ -1,0 +1,693 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Which of the steps to run
+castellatedMesh true; // true; //
+snap            true; //false; // 
+addLayers       true; // false; //
+
+
+//Optional: single region surfaces get patch names according to
+//          surface only. Multi-region surfaces get patch name
+//          surface "_ "region. Default is true
+//singleRegionName false;
+
+
+//Optional: preserve all generated patches. Default is to remove
+//          zero-sized patches.
+//keepPatches true;
+
+
+// Geometry. Definition of all surfaces. All surfaces are of class
+// searchableSurface.
+// Surfaces are used
+// - to specify refinement for any mesh cell intersecting it
+// - to specify refinement for any mesh cell inside/outside/near
+// - to 'snap' the mesh boundary to the surface
+geometry
+{
+    in_coolinggas
+    {
+        type triSurfaceMesh;
+        file "in_coolinggas.stl";
+    }
+    outlet
+    {
+        type triSurfaceMesh;
+        file "outlet.stl";
+    }
+    w_lance_3
+    {
+        type triSurfaceMesh;
+        file "w_lance_3.stl";
+    }
+    w_raceway
+    {
+        type triSurfaceMesh;
+        file "w_raceway.stl";
+    }
+    in_blast
+    {
+        type triSurfaceMesh;
+        file "in_blast.stl";
+    }
+    in_pci
+    {
+        type triSurfaceMesh;
+        file "in_pci.stl";
+    }
+    w_lance_2
+    {
+        type triSurfaceMesh;
+        file "w_lance_2.stl";
+    }
+    w_lance
+    {
+        type triSurfaceMesh;
+        file "w_lance.stl";
+    }
+    w_tuyere
+    {
+        type triSurfaceMesh;
+        file "w_tuyere.stl";
+    }
+
+    refinementAll
+    {
+        type searchableCylinder;
+        point1 (0  0 -0.2);
+        point2 (0  0  1.5);
+        radius 0.15;
+    }
+
+    refinementInlet
+    {
+        type searchableCylinder;
+        point1 (0  0 -0.3);
+        point2 (0  0  1.45); //225);
+        radius 0.075;
+    }
+
+    refinementOutlet
+    {
+        type searchableCylinder;
+        point1 (0  0 -0.3);
+        point2 (0  0  0.1); //225);
+        radius 0.15;
+    }
+/*
+    refinementBox
+    {
+        type searchableBox;
+        min (-0.075 -0.075 -0.05);
+        max ( 0.075  0.075  0.75);
+    }
+
+    refinementPipe
+    {
+        type searchableCylinder;
+        point1 (-0.05145  0 -0.05);
+        point2 (-0.05145  0  0.75);
+        radius 0.004;
+    }
+
+    refinementInlet
+    {
+        type searchableCylinder;
+        point1 (0  0 -0.05);
+        point2 (0  0  0.00);
+        radius 0.004;
+    }
+
+    refinementBoxInlet
+    {
+        type searchableBox;
+        min (-0.075 -0.025 -0.05);
+        max ( 0.010  0.025 -0.01);
+    }
+
+    refinementOutlet
+    {
+        type searchableCylinder;
+        point1 (0  0 0.55);
+        point2 (0  0 0.70);
+        radius 0.005;
+    }
+*/
+};
+
+// Settings for the castellatedMesh generation.
+castellatedMeshControls
+{
+
+    // Refinement parameters
+    // ~~~~~~~~~~~~~~~~~~~~~
+
+    // If local number of cells is >= maxLocalCells on any processor
+    // switches from from refinement followed by balancing
+    // (current method) to (weighted) balancing before refinement.
+    maxLocalCells 10000000;
+
+    // Overall cell limit (approximately). Refinement will stop immediately
+    // upon reaching this number so a refinement level might not complete.
+    // Note that this is the number of cells before removing the part which
+    // is not 'visible' from the keepPoint. The final number of cells might
+    // actually be a lot less.
+    maxGlobalCells 200000000;
+
+    // The surface refinement loop might spend lots of iterations refining just a
+    // few cells. This setting will cause refinement to stop if <= minimumRefine
+    // are selected for refinement. Note: it will at least do one iteration
+    // (unless the number of cells to refine is 0)
+    minRefinementCells 0;
+
+    // Allow a certain level of imbalance during refining
+    // (since balancing is quite expensive)
+    // Expressed as fraction of perfect balance (= overall number of cells /
+    // nProcs). 0=balance always.
+    maxLoadUnbalance 0.10;
+
+    // Number of buffer layers between different levels.
+    // 1 means normal 2:1 refinement restriction, larger means slower
+    // refinement.
+    nCellsBetweenLevels 2;
+
+
+    // Explicit feature edge refinement
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    // Specifies a level for any cell intersected by explicitly provided
+    // edges.
+    // This is a featureEdgeMesh, read from constant/triSurface for now.
+    // Specify 'levels' in the same way as the 'distance' mode in the
+    // refinementRegions (see below). The old specification
+    //      level   2;
+    // is equivalent to
+    //      levels  ((0 2));
+
+    features
+    (
+        {
+            file "in_coolinggas.eMesh";
+            level 4; //5;
+        }
+        {
+            file "outlet.eMesh";
+            level 1; //2;
+        }
+        {
+            file "w_lance_3.eMesh";
+            level 4; //5;
+        }
+        {
+            file "w_raceway.eMesh";
+            level 1; //2;
+        }
+        {
+            file "in_blast.eMesh";
+            level 1; //3;
+        }
+        {
+            file "in_pci.eMesh";
+            level 4;//5;
+        }
+        {
+            file "w_lance_2.eMesh";
+            level 3; //5;
+        }
+        {
+            file "w_lance.eMesh";
+            level 3; //5;
+        }
+        {
+            file "w_tuyere.eMesh";
+            level 1; //2;
+        }
+    );
+
+
+    // Surface based refinement
+    // ~~~~~~~~~~~~~~~~~~~~~~~~
+
+    // Specifies two levels for every surface. The first is the minimum level,
+    // every cell intersecting a surface gets refined up to the minimum level.
+    // The second level is the maximum level. Cells that 'see' multiple
+    // intersections where the intersections make an
+    // angle > resolveFeatureAngle get refined up to the maximum level.
+
+    refinementSurfaces
+    {
+        outlet
+        {
+            level (1 1);
+            //level (2 2);
+        }
+        in_coolinggas
+        {
+            level (4 4);
+            //level (3 3);
+            //level (5 5);
+        }
+        in_blast
+        {
+            level (1 1);
+            //level (3 3);
+        }
+        in_pci
+        {
+            level (4 4);
+            //level (3 3);
+            //level (5 5);
+        }
+        w_tuyere
+        {
+            level (1 1);
+            //level (3 3);
+        }
+        w_raceway
+        {
+            level (1 1);
+            //level (2 2);
+        }
+        w_lance
+        {
+            level (4 4);
+            //level (3 3);
+            //level (5 5);
+        }
+        w_lance_2
+        {
+            level (4 4);
+            //level (3 3);
+            //level (5 5);
+        }
+        w_lance_3
+        {
+            level (4 4);
+            //level (3 3);
+            //level (5 5);
+        }
+    }
+
+    // Feature angle:
+    // - used if min and max refinement level of a surface differ
+    // - used if feature snapping (see snapControls below) is used
+    resolveFeatureAngle 15;
+
+    //- Optional increment (on top of max level) in small gaps
+    // gapLevelIncrement 2;
+
+
+    // Planar angle:
+    // - used to determine if surface normals
+    //   are roughly the same or opposite. Used
+    //      - in proximity refinement
+    //      - to decide when to merge free-standing baffles
+    //        (if e.g. running in surfaceSimplify mode set this to 180 to
+    //         merge all baffles)
+    //      - in snapping to avoid snapping to nearest on 'wrong' side
+    //        of thin gap
+    //
+    // If not specified same as resolveFeatureAngle
+    planarAngle 15;
+
+
+    // Region-wise refinement
+    // ~~~~~~~~~~~~~~~~~~~~~~
+
+    // Specifies refinement level for cells in relation to a surface. One of
+    // three modes
+    // - distance. 'levels' specifies per distance to the surface the
+    //   wanted refinement level. The distances need to be specified in
+    //   increasing order.
+    // - inside. 'levels' is only one entry and only the level is used. All
+    //   cells inside the surface get refined up to the level. The surface
+    //   needs to be closed for this to be possible.
+    // - outside. Same but cells outside.
+
+    refinementRegions
+    {
+        refinementAll
+        {
+            mode inside;
+            levels ((0 1));
+        }
+
+        refinementInlet
+        {
+            mode inside;
+            levels ((0 1));
+        }
+
+/*
+        refinementBox
+        {
+            mode inside;
+            levels ((0 3));
+        }
+
+        refinementBoxInlet
+        {
+            mode inside;
+            levels ((0 4));
+        }
+
+        refinementPipe
+        {
+            mode inside;
+            levels ((0 4));
+        }
+
+        refinementInlet
+        {
+            mode inside;
+            levels ((0 4));
+        }
+*/
+
+    }
+
+    // Mesh selection
+    // ~~~~~~~~~~~~~~
+
+    // After refinement patches get added for all refinementSurfaces and
+    // all cells intersecting the surfaces get put into these patches. The
+    // section reachable from the locationInMesh is kept.
+    // NOTE: This point should never be on a face, always inside a cell, even
+    // after refinement.
+    locationInMesh (0 0 0.43);
+/*
+    locationsInMesh
+    (
+        ((0.025 0 0.005)    solid)
+        ((0     0 0.501)    twoPhaseFluid)
+        //((0.025 0 0.650)    remaining)
+    );
+*/
+    // Whether any faceZones (as specified in the refinementSurfaces)
+    // are only on the boundary of corresponding cellZones or also allow
+    // free-standing zone faces. Not used if there are no faceZones.
+    allowFreeStandingZoneFaces false; //true;
+
+
+    // Optional: do not remove cells likely to give snapping problems
+    // handleSnapProblems false;
+
+    // Optional: switch off topological test for cells to-be-squashed
+    //           and use geometric test instead
+    // useTopologicalSnapDetection false;
+}
+
+// Settings for the snapping.
+snapControls
+{
+    // Number of patch smoothing iterations before finding correspondence
+    // to surface
+    nSmoothPatch 3;
+
+    // Maximum relative distance for points to be attracted by surface.
+    // True distance is this factor times local maximum edge length.
+    // Note: changed(corrected) w.r.t 17x! (17x used 2* tolerance)
+    tolerance 2.5;
+
+    // Number of mesh displacement relaxation iterations.
+    nSolveIter 300;
+
+    // Maximum number of snapping relaxation iterations. Should stop
+    // before upon reaching a correct mesh.
+    nRelaxIter 10;
+
+    // Feature snapping
+
+        // Number of feature edge snapping iterations.
+        // Leave out altogether to disable.
+        nFeatureSnapIter 15; //5; //10;
+
+        // Detect (geometric only) features by sampling the surface
+        // (default=false).
+        implicitFeatureSnap false; //false;
+
+        // Use castellatedMeshControls::features (default = true)
+        explicitFeatureSnap true; //true;
+
+        // Detect features between multiple surfaces
+        // (only for explicitFeatureSnap, default = false)
+        multiRegionFeatureSnap true;
+
+
+    // wip: disable snapping to opposite near surfaces (revert to 22x behaviour)
+    // detectNearSurfacesSnap false;
+}
+
+// Settings for the layer addition.
+addLayersControls
+{
+    // Are the thickness parameters below relative to the undistorted
+    // size of the refined cell outside layer (true) or absolute sizes (false).
+    relativeSizes false; //true;
+
+    // Layer thickness specification. This can be specified in one of following
+    // ways:
+    // - expansionRatio and finalLayerThickness (cell nearest internal mesh)
+    // - expansionRatio and firstLayerThickness (cell on surface)
+    // - overall thickness and firstLayerThickness
+    // - overall thickness and finalLayerThickness
+    // - overall thickness and expansionRatio
+    //
+    // Note: the mode thus selected is global, i.e. one cannot override the
+    //       mode on a per-patch basis (only the values can be overridden)
+
+        // Expansion factor for layer mesh
+        expansionRatio 1.2;
+
+        // Wanted thickness of the layer furthest away from the wall.
+        // If relativeSizes this is relative to undistorted size of cell
+        // outside layer.
+        finalLayerThickness 0.001;
+
+        // Wanted thickness of the layer next to the wall.
+        // If relativeSizes this is relative to undistorted size of cell
+        // outside layer.
+        //firstLayerThickness 0.1;
+
+        // Wanted overall thickness of layers.
+        // If relativeSizes this is relative to undistorted size of cell
+        // outside layer.
+        // thickness 0.5
+
+
+    // Minimum overall thickness of total layers. If for any reason layer
+    // cannot be above minThickness do not add layer.
+    // If relativeSizes this is relative to undistorted size of cell
+    // outside layer..
+    minThickness 0.00001;
+
+
+    // Per final patch (so not geometry!) the layer information
+    // Note: This behaviour changed after 21x. Any non-mentioned patches
+    //       now slide unless:
+    //          - nSurfaceLayers is explicitly mentioned to be 0.
+    //          - angle to nearest surface < slipFeatureAngle (see below)
+    layers
+    {
+
+        w_raceway
+        {
+            nSurfaceLayers      5;
+            expansionRatio      1.2;
+            finalLayerThickness 0.0015;
+            //minThickness        0.1;
+        }
+        w_tuyere
+        {
+            nSurfaceLayers      5;
+            expansionRatio      1.2;
+            finalLayerThickness 0.0015;
+            //minThickness        0.1;
+        }
+
+        w_lance
+        {
+            nSurfaceLayers      2;
+            expansionRatio      1;
+            firstLayerThickness 0.00045;
+            //minThickness        0.0001;
+            //thickness           0.005;
+        }
+
+        w_lance_2
+        {
+            nSurfaceLayers      2;
+            expansionRatio      1;
+            finalLayerThickness 0.000375;
+            //minThickness        0.005;
+        }
+
+        w_lance_3
+        {
+            nSurfaceLayers      2;
+            expansionRatio      1;
+            finalLayerThickness 0.000375;
+            //minThickness        0.005;
+        }
+/*
+        in_pci
+        {
+            nSurfaceLayers      2;
+            expansionRatio      1;
+            finalLayerThickness 0.0005;
+            //minThickness        0.0001;
+            //thickness           0.005;
+        }
+*/
+    }
+
+    // If points get not extruded do nGrow layers of connected faces that are
+    // also not grown. This helps convergence of the layer addition process
+    // close to features.
+    // Note: changed(corrected) w.r.t 17x! (didn't do anything in 17x)
+    nGrow 0; //-1000; // 0;
+
+    // Advanced settings
+
+
+    // Static analysis of starting mesh
+
+        // When not to extrude surface. 0 is flat surface, 90 is when two faces
+        // are perpendicular
+        featureAngle 10; //20;
+
+        // Stop layer growth on highly warped cells
+        maxFaceThicknessRatio 0.5; // 0.5;
+
+
+    // Patch displacement
+
+        // Number of smoothing iterations of surface normals
+        nSmoothSurfaceNormals 50; //50;
+
+        // Smooth layer thickness over surface patches
+        nSmoothThickness 20; //10;
+
+
+
+    // Medial axis analysis
+
+        // Angle used to pick up medial axis points
+        // Note: changed(corrected) w.r.t 17x! 90 degrees corresponds to 130
+        // in 17x.
+        minMedialAxisAngle 90;
+
+        // Reduce layer growth where ratio thickness to medial
+        // distance is large
+        maxThicknessToMedialRatio 0.5; //0.3;
+
+        // Number of smoothing iterations of interior mesh movement direction
+        nSmoothNormals 1; //1;
+
+        // Optional: limit the number of steps walking away from the surface.
+        // Default is unlimited.
+        // nMedialAxisIter 10;
+
+        // Optional: smooth displacement after medial axis determination.
+        // default is 0.
+        nSmoothDisplacement 90; // 90;
+
+        // (wip)Optional: do not extrude a point if none of the surrounding points is
+        // not extruded. Default is false.
+        // detectExtrusionIsland true;
+
+
+    // Mesh shrinking
+
+        // Optional: at non-patched sides allow mesh to slip if extrusion
+        // direction makes angle larger than slipFeatureAngle. Default is
+        // 0.5*featureAngle.
+        slipFeatureAngle 2.5; //2.5; // 90;
+
+        // Maximum number of snapping relaxation iterations. Should stop
+        // before upon reaching a correct mesh.
+        nRelaxIter 5; //25; // 5;
+
+        // Create buffer region for new layer terminations
+        nBufferCellsNoExtrude 2; //0;
+
+        // Overall max number of layer addition iterations. The mesher will
+        // exit if it reaches this number of iterations; possibly with an
+        // illegal mesh.
+        nLayerIter 5;
+
+        // Max number of iterations after which relaxed meshQuality controls
+        // get used. Up to nRelaxedIter it uses the settings in
+        // meshQualityControls,
+        // after nRelaxedIter it uses the values in
+        // meshQualityControls::relaxed.
+        nRelaxedIter 150;
+
+        // Additional reporting: if there are just a few faces where there
+        // are mesh errors (after adding the layers) print their face centres.
+        // This helps in tracking down problematic mesh areas.
+        additionalReporting true;
+}
+
+// Generic mesh quality settings. At any undoable phase these determine
+// where to undo.
+meshQualityControls
+{
+    // Specify mesh quality constraints in separate dictionary so can
+    // be reused (e.g. checkMesh -meshQuality)
+    #include "meshQualityDict"
+
+    // Number of error distribution iterations
+    nSmoothScale 4;
+    // amount to scale back displacement at error points
+    errorReduction 0.75;
+
+
+    // Optional : some meshing phases allow usage of relaxed rules.
+    // See e.g. addLayersControls::nRelaxedIter.
+    relaxed
+    {
+        // Maximum non-orthogonality allowed. Set to 180 to disable.
+        maxNonOrtho 75;
+    }
+}
+
+// Advanced
+
+//// Debug flags
+//debugFlags
+//(
+//    mesh            // write intermediate meshes
+//    intersections   // write current mesh intersections as .obj files
+//    featureSeeds    // write information about explicit feature edge
+//                    // refinement
+//    attraction      // write attraction as .obj files
+//    layerInfo       // write information about layers
+//);
+//
+//// Write flags
+//writeFlags
+//(
+//    scalarLevels    // write volScalarField with cellLevel for postprocessing
+//    layerSets       // write cellSets, faceSets of faces in layer
+//    layerFields     // write volScalarField for layer coverage
+//);
+
+// Merge tolerance. Is fraction of overall bounding box of initial mesh.
+// Note: the write tolerance needs to be higher than this.
+mergeTolerance 1e-6;
+
+// ************************************************************************* //

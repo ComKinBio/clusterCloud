@@ -1,0 +1,83 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7  
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     reactingFoam;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         100000;
+
+deltaT          1;
+
+writeControl    runTime; 
+
+writeInterval   600;
+
+purgeWrite      10;
+
+writeFormat     ascii;
+
+writePrecision  10;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+libs
+(
+    "libadditionalODE.so"
+    "libedcChemistryModel.so"
+    "libedcCombustionModels.so"
+);
+
+functions
+{
+
+    residuals
+    {
+        functionObjectLibs ("libutilityFunctionObjects.so");
+        type            residuals;
+        writeFields     yes;
+        writeControl    timeStep;
+        writeInterval   1;
+        writeResidualFields     yes;
+        fields
+        (
+            U
+            Uy
+            Uz
+            O2
+            CO2
+            tar
+            h
+            p
+            k
+            epsilon
+        );
+    }
+
+}
+
+// ************************************************************************* //
