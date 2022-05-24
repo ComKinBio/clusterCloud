@@ -23,35 +23,23 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef makeReactingClusterParcelDevolatilisationModels_H
-#define makeReactingClusterParcelDevolatilisationModels_H
+#ifndef makeAdditionalReactingMultiphaseParcelDevolatilisationModels_H
+#define makeAdditionalReactingMultiphaseParcelDevolatilisationModels_H
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "makeClusterDevolatilisationModel.H"
-
-#include "ConstantRateDevolatilisation.H"
-#include "NoDevolatilisation.H"
-#include "SingleKineticRateDevolatilisation.H"
 #include "CompetingTwoStepKineticRateDevolatilisation.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#define makeReactingClusterParcelDevolatilisationModels(CloudType)             \
+#define makeAdditionalReactingMultiphaseParcelDevolatilisationModels(CloudType)\
                                                                                \
-    makeClusterDevolatilisationModel(CloudType);                               \
-    makeClusterDevolatilisationModelType(ConstantRateDevolatilisation, CloudType);\
-    makeClusterDevolatilisationModelType(NoDevolatilisation, CloudType);       \
-    makeClusterDevolatilisationModelType                                       \
-    (                                                                          \
-        SingleKineticRateDevolatilisation,                                     \
-        CloudType                                                              \
-    );                                                                         \
-    makeClusterDevolatilisationModelType                                       \
+    makeDevolatilisationModelType                                              \
     (                                                                          \
         CompetingTwoStepKineticRateDevolatilisation,                           \
         CloudType                                                              \
     );
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

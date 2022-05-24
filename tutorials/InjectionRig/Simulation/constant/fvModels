@@ -20,10 +20,10 @@ buoyancyForce
     type        buoyancyForce;
 }
 
-multiphaseClouds
+clusterClouds
 {
-    type    multiphaseClouds;
-    libs    ("liblagrangianMultiphaseParcel.so");
+    type    clusterClouds;
+    libs    ("liblagrangianClusterParcel.so");
 }
 
 radiation

@@ -23,7 +23,7 @@ chemistryType
 
 EulerImplicitCoeffs
 {
-    cTauChem;
+    cTauChem    1;
 }
 
 chemistry       on;
